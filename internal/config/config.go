@@ -1,8 +1,9 @@
 package config
 
-type Config struct {
+type SearchConfig struct {
 	Pattern     string
 	Path        string
 	IgnoreCase  bool
 	FixedString bool
+	Workers     int
 }

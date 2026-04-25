@@ -2,37 +2,42 @@ package engine
 
 import (
 	"bufio"
-	"gorep/internal/model"
 	"os"
+
+	"gorep/internal/model"
 )
 
-func SearchFile(filePath string, macher Matcher) (*model.FileMatch, error) {
+func SearchFile(filePath string, matcher *Matcher) (*model.FileMatch, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close() // 防止忘了关闭
+	defer file.Close()
 
 	var matches []model.LineMatch
 	scanner := bufio.NewScanner(file)
-	LineNum := 0
+	lineNum := 0
 
 	for scanner.Scan() {
-		LineNum++
+		lineNum++
 		line := scanner.Text()
-		if macher.Match(line) {
+
+		if matcher.Match(line) {
 			matches = append(matches, model.LineMatch{
-				LineNum: LineNum,
+				LineNum: lineNum,
 				Content: line,
 			})
 		}
 	}
+
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
+
 	if len(matches) == 0 {
 		return nil, nil
 	}
+
 	return &model.FileMatch{
 		FilePath: filePath,
 		Lines:    matches,

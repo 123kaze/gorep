@@ -43,6 +43,7 @@ func (m *Matcher) Match(line string) bool {
 		if m.ignoreCase {
 			return strings.Contains(strings.ToLower(line), m.Pattern)
 		}
+		return strings.Contains(line, m.Pattern)
 	}
 	return m.regex.MatchString(line)
 }

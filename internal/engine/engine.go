@@ -1,0 +1,108 @@
+package engine
+
+import (
+	"fmt"
+	"gorep/internal/config"
+	"gorep/internal/model"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sync"
+)
+
+func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, error) {
+	info, err := os.Stat(cfg.Path)
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
+		match, err := SearchFile(cfg.Path, matcher)
+		if err != nil {
+			return nil, err
+		}
+		if match == nil {
+			return nil, nil
+		}
+		return []model.FileMatch{*match}, nil
+	}
+	// 新增用cfg传递参数，然后用chan来做多线程
+	if cfg.Workers <= 0 {
+		cfg.Workers = 1
+	}
+	fileCh := make(chan string, cfg.Workers*2)
+	resultCh := make(chan *model.FileMatch, cfg.Workers)
+
+	var wg sync.WaitGroup
+
+	go func() {
+		defer close(fileCh)
+		walkFiles(cfg.Path, fileCh)
+	}()
+
+	for i := 0; i < cfg.Workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for filepath := range fileCh {
+				match, err := SearchFile(filepath, matcher)
+				if err != nil {
+					fmt.Printf("Error searching %s: %s\n", filepath, err)
+					continue
+				}
+				if match != nil {
+					resultCh <- match
+				}
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultCh)
+	}()
+
+	var results []model.FileMatch
+	for match := range resultCh {
+		results = append(results, *match)
+	}
+
+	return results, nil
+	// version 1.0 代码
+	//var results []model.FileMatch
+	//err = filepath.WalkDir(cfg.Path, func(currentPath string, d fs.DirEntry, err error) error {
+	//	if err != nil {
+	//		return err
+	//	}
+	//	if d.IsDir() {
+	//		return nil
+	//	}
+	//	match, err := SearchFile(currentPath, matcher)
+	//	if err != nil {
+	//		fmt.Println("error:", err)
+	//		return err
+	//	}
+	//	if match == nil {
+	//		return nil
+	//	}
+	//	results = append(results, *match)
+	//	return nil
+	//})
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return results, nil
+}
+
+func walkFiles(root string, fileCh chan<- string) {
+	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+		fileCh <- path
+		return nil
+	})
+}

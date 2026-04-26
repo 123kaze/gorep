@@ -17,6 +17,7 @@ var (
 	workers     int
 	include     []string
 	exclude     []string
+	all         bool
 )
 var rootCmd = &cobra.Command{
 	Use:   "gorep <pattern> <path>",
@@ -31,6 +32,7 @@ var rootCmd = &cobra.Command{
 			Workers:     workers,
 			Includes:    include,
 			Excludes:    exclude,
+			All:         all,
 		}
 
 		matcher, err := engine.NewMatcher(cfg.Pattern, cfg.FixedString, cfg.IgnoreCase)
@@ -70,6 +72,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&workers, "workers", "j", runtime.NumCPU(), "number of worker goroutines")
 	rootCmd.Flags().StringSliceVar(&include, "include", nil, "include files matching glob pattern")
 	rootCmd.Flags().StringSliceVar(&exclude, "exclude", nil, "exclude files matching glob pattern")
+	rootCmd.Flags().BoolVarP(&all, "all", "a", false, "search for all files")
 }
 
 func Execute() {

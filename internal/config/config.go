@@ -8,4 +8,5 @@ type SearchConfig struct {
 	Workers     int
 	Includes    []string
 	Excludes    []string
+	All         bool
 }

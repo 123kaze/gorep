@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -37,7 +38,7 @@ func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, e
 
 	go func() {
 		defer close(fileCh)
-		walkFiles(cfg.Path, globFilter, fileCh)
+		walkFiles(cfg.Path, globFilter, fileCh, cfg.All)
 	}()
 
 	for i := 0; i < cfg.Workers; i++ {
@@ -95,10 +96,14 @@ func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, e
 	//return results, nil
 }
 
-func walkFiles(root string, globFilter *filter.GlobFilter, fileCh chan<- string) {
+func walkFiles(root string, globFilter *filter.GlobFilter, fileCh chan<- string, all bool) {
 	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
+		}
+		isHidden := strings.HasPrefix(d.Name(), ".")
+		if !all && isHidden {
+			return filepath.SkipDir
 		}
 		if d.IsDir() {
 			return nil

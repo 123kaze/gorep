@@ -6,4 +6,6 @@ type SearchConfig struct {
 	IgnoreCase  bool
 	FixedString bool
 	Workers     int
+	Includes    []string
+	Excludes    []string
 }

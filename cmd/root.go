@@ -2,17 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"gorep/internal/config"
 	"gorep/internal/engine"
+	"gorep/internal/printer"
 	"os"
 	"runtime"
+
+	"github.com/spf13/cobra"
 )
 
 var (
 	ignoreCase  bool
 	fixedString bool
 	workers     int
+	include     []string
+	exclude     []string
 )
 var rootCmd = &cobra.Command{
 	Use:   "gorep <pattern> <path>",
@@ -25,6 +29,8 @@ var rootCmd = &cobra.Command{
 			IgnoreCase:  ignoreCase,
 			FixedString: fixedString,
 			Workers:     workers,
+			Includes:    include,
+			Excludes:    exclude,
 		}
 
 		matcher, err := engine.NewMatcher(cfg.Pattern, cfg.FixedString, cfg.IgnoreCase)
@@ -33,20 +39,18 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		matchs, err := engine.SearchPath(cfg, matcher)
+		matches, err := engine.SearchPath(cfg, matcher)
 		if err != nil {
 			fmt.Println("error:", err)
 			os.Exit(1)
 		}
-		if len(matchs) == 0 {
+		if len(matches) == 0 {
 			fmt.Println("no matched content was found")
 			return
 		}
-		for _, match := range matchs {
-			fmt.Println(match.FilePath)
-			for _, line := range match.Lines {
-				fmt.Printf("  %d:  %s\n", line.LineNum, line.Content)
-			}
+		p := printer.NewTerminalPrinter()
+		for _, match := range matches {
+			p.Print(match)
 		}
 		// 初版代码
 		//if match == nil {
@@ -64,6 +68,8 @@ func init() {
 	rootCmd.Flags().BoolVarP(&ignoreCase, "ignore-case", "i", false, "ignore case distinction")
 	rootCmd.Flags().BoolVarP(&fixedString, "fixed-string", "F", false, "target Pattern as a literal string")
 	rootCmd.Flags().IntVarP(&workers, "workers", "j", runtime.NumCPU(), "number of worker goroutines")
+	rootCmd.Flags().StringSliceVar(&include, "include", nil, "include files matching glob pattern")
+	rootCmd.Flags().StringSliceVar(&exclude, "exclude", nil, "exclude files matching glob pattern")
 }
 
 func Execute() {

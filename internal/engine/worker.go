@@ -22,10 +22,19 @@ func SearchFile(filePath string, matcher *Matcher) (*model.FileMatch, error) {
 		lineNum++
 		line := scanner.Text()
 
-		if matcher.Match(line) {
+		//if matcher.Match(line) {
+		//	matches = append(matches, model.LineMatch{
+		//		LineNum: lineNum,
+		//		Content: line,
+		//	})
+		//}
+
+		ranges := matcher.FindHighlightRanges(line)
+		if len(ranges) > 0 {
 			matches = append(matches, model.LineMatch{
 				LineNum: lineNum,
 				Content: line,
+				Ranges:  ranges,
 			})
 		}
 	}

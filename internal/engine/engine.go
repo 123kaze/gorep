@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"gorep/internal/config"
+	"gorep/internal/filter"
 	"gorep/internal/model"
 	"io/fs"
 	"os"
@@ -31,12 +32,12 @@ func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, e
 	}
 	fileCh := make(chan string, cfg.Workers*2)
 	resultCh := make(chan *model.FileMatch, cfg.Workers)
-
+	globFilter := filter.NewGlobFilter(cfg.Includes, cfg.Excludes)
 	var wg sync.WaitGroup
 
 	go func() {
 		defer close(fileCh)
-		walkFiles(cfg.Path, fileCh)
+		walkFiles(cfg.Path, globFilter, fileCh)
 	}()
 
 	for i := 0; i < cfg.Workers; i++ {
@@ -94,12 +95,22 @@ func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, e
 	//return results, nil
 }
 
-func walkFiles(root string, fileCh chan<- string) {
+func walkFiles(root string, globFilter *filter.GlobFilter, fileCh chan<- string) {
 	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
 		if d.IsDir() {
+			return nil
+		}
+		relPath, err := filepath.Rel(root, path)
+		if err != nil {
+			return nil
+		}
+		if !globFilter.Match(relPath) {
+			return nil
+		}
+		if filter.IsBinary(path) {
 			return nil
 		}
 		fileCh <- path

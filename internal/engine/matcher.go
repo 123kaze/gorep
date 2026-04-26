@@ -38,12 +38,56 @@ func NewMatcher(pattern string, fixedString bool, ignoreCase bool) (*Matcher, er
 	return m, nil
 }
 
-func (m *Matcher) Match(line string) bool {
+//func (m *Matcher) Match(line string) bool {
+//	if m.fixedString {
+//		if m.ignoreCase {
+//			return strings.Contains(strings.ToLower(line), m.Pattern)
+//		}
+//		return strings.Contains(line, m.Pattern)
+//	}
+//	return m.regex.MatchString(line)
+//}
+
+func (m *Matcher) FindHighlightRanges(line string) [][2]int {
+
 	if m.fixedString {
-		if m.ignoreCase {
-			return strings.Contains(strings.ToLower(line), m.Pattern)
-		}
-		return strings.Contains(line, m.Pattern)
+		return findAllFixed(line, m.Pattern, m.ignoreCase)
 	}
-	return m.regex.MatchString(line)
+	locs := m.regex.FindAllStringIndex(line, -1)
+	if locs == nil {
+		return nil
+	}
+	ranges := make([][2]int, len(locs))
+	for i, loc := range locs {
+		ranges[i] = [2]int{loc[0], loc[1]}
+	}
+	return ranges
+}
+
+func findAllFixed(line string, pattern string, ignoreCase bool) [][2]int {
+	if pattern == "" {
+		return nil
+	}
+	searchLine := line
+	searchPattern := pattern
+	if ignoreCase {
+		searchLine = strings.ToLower(searchLine)
+	}
+	var ranges [][2]int
+	start := 0
+
+	for {
+		idx := strings.Index(searchLine[start:], searchPattern)
+		if idx == -1 {
+			break
+		}
+		matchStart := start + idx
+		matchEnd := matchStart + len(searchPattern)
+		ranges = append(ranges, [2]int{matchStart, matchEnd})
+		start = matchEnd
+		if start >= len(searchLine) {
+			break
+		}
+	}
+	return ranges
 }

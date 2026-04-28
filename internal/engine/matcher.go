@@ -19,6 +19,7 @@ func NewMatcher(pattern string, fixedString bool, ignoreCase bool) (*Matcher, er
 		fixedString: fixedString,
 		ignoreCase:  ignoreCase,
 	}
+
 	if fixedString {
 		if ignoreCase {
 			m.Pattern = strings.ToLower(m.Pattern)
@@ -75,7 +76,7 @@ func findAllFixed(line string, pattern string, ignoreCase bool) [][2]int {
 	}
 	var ranges [][2]int
 	start := 0
-
+	n := len(searchLine)
 	for {
 		idx := strings.Index(searchLine[start:], searchPattern)
 		if idx == -1 {
@@ -85,7 +86,7 @@ func findAllFixed(line string, pattern string, ignoreCase bool) [][2]int {
 		matchEnd := matchStart + len(searchPattern)
 		ranges = append(ranges, [2]int{matchStart, matchEnd})
 		start = matchEnd
-		if start >= len(searchLine) {
+		if start >= n {
 			break
 		}
 	}

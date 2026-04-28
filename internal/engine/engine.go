@@ -101,13 +101,18 @@ func walkFiles(root string, globFilter *filter.GlobFilter, fileCh chan<- string,
 		if err != nil {
 			return nil
 		}
-		isHidden := strings.HasPrefix(d.Name(), ".")
-		if !all && isHidden {
-			return filepath.SkipDir
-		}
 		if d.IsDir() {
+			isHidden := path != root && strings.HasPrefix(d.Name(), ".")
+			if !all && isHidden {
+				return filepath.SkipDir
+			}
 			return nil
 		}
+
+		if !all && strings.HasPrefix(d.Name(), ".") {
+			return nil
+		}
+
 		relPath, err := filepath.Rel(root, path)
 		if err != nil {
 			return nil

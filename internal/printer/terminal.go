@@ -11,20 +11,34 @@ type TerminalPrinter struct {
 	fileColor    *color.Color
 	lineNumColor *color.Color
 	matchColor   *color.Color
+	useColor     bool
 }
 
-func NewTerminalPrinter() *TerminalPrinter {
-	return &TerminalPrinter{
-		fileColor:    color.New(color.FgMagenta, color.Bold),
-		lineNumColor: color.New(color.FgGreen),
-		matchColor:   color.New(color.FgRed, color.Bold),
+func NewTerminalPrinter(useColor bool) *TerminalPrinter {
+	p := &TerminalPrinter{
+		useColor: useColor,
 	}
+	if useColor {
+		p.fileColor = color.New(color.FgMagenta, color.Bold)
+		p.lineNumColor = color.New(color.FgGreen)
+		p.matchColor = color.New(color.FgRed, color.Bold)
+	}
+	return p
 }
 
 func (p *TerminalPrinter) Print(match model.FileMatch) {
-	p.fileColor.Println(match.FilePath)
+	if p.useColor {
+		p.fileColor.Println(match.FilePath)
+	} else {
+		fmt.Println(match.FilePath)
+	}
+
 	for _, line := range match.Lines {
-		p.lineNumColor.Printf(" %d: ", line.LineNum)
+		if p.useColor {
+			p.lineNumColor.Printf(" %d: ", line.LineNum)
+		} else {
+			fmt.Println(line.LineNum)
+		}
 		p.printHighlighted(line.Content, line.Ranges)
 		fmt.Println()
 	}
@@ -38,7 +52,11 @@ func (p *TerminalPrinter) printHighlighted(content string, ranges [][2]int) {
 	lastEnd := 0
 	for _, r := range ranges {
 		fmt.Print(content[lastEnd:r[0]])
-		p.matchColor.Print(content[r[0]:r[1]])
+		if p.useColor {
+			p.matchColor.Print(content[r[0]:r[1]])
+		} else {
+			fmt.Print(content[r[0]:r[1]])
+		}
 		lastEnd = r[1]
 	}
 	fmt.Print(content[lastEnd:])

@@ -9,4 +9,5 @@ type SearchConfig struct {
 	Includes    []string
 	Excludes    []string
 	All         bool
+	NoColor     bool
 }

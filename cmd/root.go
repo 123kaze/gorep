@@ -18,6 +18,7 @@ var (
 	include     []string
 	exclude     []string
 	all         bool
+	noColor     bool
 )
 var rootCmd = &cobra.Command{
 	Use:   "gorep <pattern> <path>",
@@ -33,6 +34,7 @@ var rootCmd = &cobra.Command{
 			Includes:    include,
 			Excludes:    exclude,
 			All:         all,
+			NoColor:     noColor,
 		}
 
 		matcher, err := engine.NewMatcher(cfg.Pattern, cfg.FixedString, cfg.IgnoreCase)
@@ -50,7 +52,8 @@ var rootCmd = &cobra.Command{
 			fmt.Println("no matched content was found")
 			return
 		}
-		p := printer.NewTerminalPrinter()
+		var p printer.Printer
+		p = printer.NewTerminalPrinter(!noColor)
 		for _, match := range matches {
 			p.Print(match)
 		}
@@ -73,6 +76,7 @@ func init() {
 	rootCmd.Flags().StringSliceVar(&include, "include", nil, "include files matching glob pattern")
 	rootCmd.Flags().StringSliceVar(&exclude, "exclude", nil, "exclude files matching glob pattern")
 	rootCmd.Flags().BoolVarP(&all, "all", "a", false, "search for all files")
+	rootCmd.Flags().BoolVarP(&noColor, "no-color", "n", false, "disable color output")
 }
 
 func Execute() {

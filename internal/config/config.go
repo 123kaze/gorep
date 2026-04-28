@@ -10,4 +10,8 @@ type SearchConfig struct {
 	Excludes    []string
 	All         bool
 	NoColor     bool
+	BeforeCtx   int
+	AfterCtx    int
+	CtxLines    int
+	NoGitIgnore bool
 }

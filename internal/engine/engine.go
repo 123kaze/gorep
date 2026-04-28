@@ -18,7 +18,7 @@ func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, e
 		return nil, err
 	}
 	if !info.IsDir() {
-		match, err := SearchFile(cfg.Path, matcher)
+		match, err := SearchFile(cfg.Path, matcher, cfg.BeforeCtx, cfg.AfterCtx)
 		if err != nil {
 			return nil, err
 		}
@@ -34,11 +34,15 @@ func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, e
 	fileCh := make(chan string, cfg.Workers*2)
 	resultCh := make(chan *model.FileMatch, cfg.Workers)
 	globFilter := filter.NewGlobFilter(cfg.Includes, cfg.Excludes)
+	var gitIgnore *filter.GitIgnore
+	if !cfg.NoGitIgnore {
+		gitIgnore, _ = filter.NewGitIgnore(cfg.Path)
+	}
 	var wg sync.WaitGroup
 
 	go func() {
 		defer close(fileCh)
-		walkFiles(cfg.Path, globFilter, fileCh, cfg.All)
+		walkFiles(cfg.Path, globFilter, gitIgnore, fileCh, cfg.All)
 	}()
 
 	for i := 0; i < cfg.Workers; i++ {
@@ -47,7 +51,7 @@ func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, e
 			defer wg.Done()
 
 			for filepath := range fileCh {
-				match, err := SearchFile(filepath, matcher)
+				match, err := SearchFile(filepath, matcher, cfg.BeforeCtx, cfg.AfterCtx)
 				if err != nil {
 					fmt.Printf("Error searching %s: %s\n", filepath, err)
 					continue
@@ -96,7 +100,7 @@ func SearchPath(cfg config.SearchConfig, matcher *Matcher) ([]model.FileMatch, e
 	//return results, nil
 }
 
-func walkFiles(root string, globFilter *filter.GlobFilter, fileCh chan<- string, all bool) {
+func walkFiles(root string, globFilter *filter.GlobFilter, gitIgnore *filter.GitIgnore, fileCh chan<- string, all bool) {
 	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
@@ -106,10 +110,16 @@ func walkFiles(root string, globFilter *filter.GlobFilter, fileCh chan<- string,
 			if !all && isHidden {
 				return filepath.SkipDir
 			}
+			if gitIgnore != nil && gitIgnore.Match(path, true) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
 		if !all && strings.HasPrefix(d.Name(), ".") {
+			return nil
+		}
+		if gitIgnore != nil && gitIgnore.Match(path, false) {
 			return nil
 		}
 
@@ -120,7 +130,7 @@ func walkFiles(root string, globFilter *filter.GlobFilter, fileCh chan<- string,
 		if !globFilter.Match(relPath) {
 			return nil
 		}
-		if filter.IsBinary(path) {
+		if filter.HasBinaryExt(path) {
 			return nil
 		}
 		fileCh <- path

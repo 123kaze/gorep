@@ -1,223 +1,127 @@
-# gorep vs ripgrep vs GNU grep 性能基准测试报告
+# gorep / ripgrep / grep 性能测试报告
 
-> **测试日期**: 2026-04-28 13:23
-> **测试目录**: `/home/123kaze/Project/claude-code-source-code-main` (21604 文件, 436M)
-> **系统**: Linux 6.19.11-100.fc42.x86_64 | 12核心 | 31Gi RAM
+- **测试时间**：2026-04-28 22:59:11
+- **测试目录**：`/home/123kaze/Project/claude-code-source-code-main`
+- **文件数量**：约 `21667` 个普通文件
+- **测试轮数**：每个 case 每个工具 `9` 轮
+- **统计口径**：报告 `median` 为主要结论，`avg/min/max` 辅助参考
+
+## 工具版本
+
+- **rg**：`ripgrep 14.1.1`
+- **grep**：`grep (GNU grep) 3.12`
+- **gorep**：当前目录编译产物 `./gorep`（`A fast file search CLI for Go`）
 
 ## 测试方法
 
-- **每项测试运行 5 次**，取平均值、中位数、最佳值
-- 使用 `/usr/bin/time -p` 测量 real 时间，精确到毫秒
-- **搜索结果重定向到 /dev/null**，只测量搜索耗时本身
-- 场景涵盖：普通搜索、正则、忽略大小写、固定字符串、大目录、罕见字符串
-
----
-
-## 常规搜索测试
-
-### word_class
-
-**描述**: 普通搜索-常见英文'class'  |  **模式**: `class`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .2722s | 0.274s | 0.266s | **1.0x** | 6.90x | 1.17x |
-| rg    | .0394s | 0.039s | 0.036s | .14x | **1.0x** | .17x |
-| grep  | .2314s | 0.232s | 0.228s | .85x | 5.87x | **1.0x** |
-
-**结论**: gorep=0.27s, rg=0.04s, grep=0.23s
-
-### word_import
-
-**描述**: 普通搜索-关键字'import'  |  **模式**: `import`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .3326s | 0.333s | 0.325s | **1.0x** | 7.32x | 1.42x |
-| rg    | .0454s | 0.046s | 0.044s | .13x | **1.0x** | .19x |
-| grep  | .2342s | 0.233s | 0.230s | .70x | 5.15x | **1.0x** |
-
-**结论**: gorep=0.33s, rg=0.05s, grep=0.23s
-
-### word_cn
-
-**描述**: 普通搜索-中文'函数'  |  **模式**: `函数`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .2174s | 0.217s | 0.212s | **1.0x** | 7.05x | .67x |
-| rg    | .0308s | 0.030s | 0.029s | .14x | **1.0x** | .09x |
-| grep  | .3216s | 0.324s | 0.316s | 1.47x | 10.44x | **1.0x** |
-
-**结论**: gorep=0.22s, rg=0.03s, grep=0.32s
-
-### word_long
-
-**描述**: 普通搜索-长标识符'getTradingCalendar'  |  **模式**: `getTradingCalendar`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .2186s | 0.220s | 0.209s | **1.0x** | 7.43x | .57x |
-| rg    | .0294s | 0.029s | 0.028s | .13x | **1.0x** | .07x |
-| grep  | .3786s | 0.374s | 0.373s | 1.73x | 12.87x | **1.0x** |
-
-**结论**: gorep=0.22s, rg=0.03s, grep=0.38s
-
-### regex_ip
-
-**描述**: 正则搜索-IP模式'[0-9]{1,3}\.[0-9]{1,3}'  |  **模式**: `[0-9]{1,3}\.[0-9]{1,3}`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .5752s | 0.562s | 0.557s | **1.0x** | 13.76x | 1.56x |
-| rg    | .0418s | 0.042s | 0.040s | .07x | **1.0x** | .11x |
-| grep  | .3686s | 0.364s | 0.362s | .64x | 8.81x | **1.0x** |
-
-**结论**: gorep=0.58s, rg=0.04s, grep=0.37s
-
-### regex_func
-
-**描述**: 正则搜索-函数定义'def [a-z_]+'  |  **模式**: `def [a-z_]+`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .3392s | 0.338s | 0.333s | **1.0x** | 8.00x | .67x |
-| rg    | .0424s | 0.042s | 0.039s | .12x | **1.0x** | .08x |
-| grep  | .4998s | 0.499s | 0.497s | 1.47x | 11.78x | **1.0x** |
-
-**结论**: gorep=0.34s, rg=0.04s, grep=0.50s
-
-### regex_hex
-
-**描述**: 正则搜索-hex地址'0x[a-fA-F0-9]+'  |  **模式**: `0x[a-fA-F0-9]+`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .2974s | 0.298s | 0.291s | **1.0x** | 9.01x | .75x |
-| rg    | .0330s | 0.032s | 0.031s | .11x | **1.0x** | .08x |
-| grep  | .3952s | 0.396s | 0.389s | 1.32x | 11.97x | **1.0x** |
-
-**结论**: gorep=0.30s, rg=0.03s, grep=0.40s
-
-### ignorecase
-
-**描述**: 忽略大小写'Class'  |  **模式**: `Class`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .2258s | 0.227s | 0.221s | **1.0x** | 7.23x | .68x |
-| rg    | .0312s | 0.031s | 0.029s | .13x | **1.0x** | .09x |
-| grep  | .3306s | 0.330s | 0.329s | 1.46x | 10.59x | **1.0x** |
-
-**结论**: gorep=0.23s, rg=0.03s, grep=0.33s
-
-### fixed
-
-**描述**: 固定字符串'import'  |  **模式**: `-F|-F||-F`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .0020s | 0.002s | 0.002s | **1.0x** | 1.42x | 2.00x |
-| rg    | .0014s | 0.001s | 0.001s | .70x | **1.0x** | 1.40x |
-| grep  | .0010s | 0.001s | 0.001s | .50x | .71x | **1.0x** |
-
-**结论**: gorep=0.00s, rg=0.00s, grep=0.00s
-
-### regex_complex
-
-**描述**: 复杂正则'class [A-Z][a-zA-Z]+'  |  **模式**: `class [A-Z][a-zA-Z]+`
-
-| 工具 | 平均耗时 | 中位数  | 最佳值 | gorep比值 | rg比值 | grep比值 |
-|-----|:-------:|:------:|:------:|:--------:|:-----:|:--------:|
-| gorep | .3480s | 0.305s | 0.275s | **1.0x** | 5.83x | .73x |
-| rg    | .0596s | 0.060s | 0.058s | .17x | **1.0x** | .12x |
-| grep  | .4714s | 0.470s | 0.459s | 1.35x | 7.90x | **1.0x** |
-
-**结论**: gorep=0.35s, rg=0.06s, grep=0.47s
-
-
----
-## 高负载测试
-
-### hl_quant
-
-**描述**: 大目录搜索quant_agent(400MB+)中'class'
-
-| 工具 | 平均耗时 | 中位数 | 最佳值 |
-|-----|:-------:|:-----:|:------:|
-| gorep | .3166s | 0.309s | 0.295s |
-| rg    | .0486s | 0.051s | 0.044s |
-| grep  | .2243s | 0.227s | 0.218s |
-
-**结论**: gorep=0.32s, rg=0.05s, grep=0.22s
-
-### hl_rare
-
-**描述**: 罕见字符串搜索'TelemetryBuffer'
-
-| 工具 | 平均耗时 | 中位数 | 最佳值 |
-|-----|:-------:|:-----:|:------:|
-| gorep | .2746s | 0.274s | 0.260s |
-| rg    | .0533s | 0.054s | 0.051s |
-| grep  | .4086s | 0.412s | 0.402s |
-
-**结论**: gorep=0.27s, rg=0.05s, grep=0.41s
-
-### hl_big_regex
-
-**描述**: 大正则搜索'def [a-z_]+\([a-zA-Z0-9_, =\[\],:]*\)
-
-| 工具 | 平均耗时 | 中位数 | 最佳值 |
-|-----|:-------:|:-----:|:------:|
-| gorep | .3833s | 0.389s | 0.367s |
-| rg    | .0586s | 0.059s | 0.057s |
-| grep  | .5160s | 0.519s | 0.510s |
-
-**结论**: gorep=0.38s, rg=0.06s, grep=0.52s
-
-### hl_empty
-
-**描述**: 搜索不可能存在字符串'zxcvbnmqwerty123456
-
-| 工具 | 平均耗时 | 中位数 | 最佳值 |
-|-----|:-------:|:-----:|:------:|
-| gorep | .2760s | 0.277s | 0.269s |
-| rg    | .0516s | 0.053s | 0.049s |
-| grep  | .3720s | 0.372s | 0.369s |
-
-**结论**: gorep=0.28s, rg=0.05s, grep=0.37s
-
----
-## 综合总结
-
-### 性能排名（从快到慢）
-
-1. **🥇 ripgrep (rg)** — 在绝大多数场景中表现最佳
-2. **🥈 gorep** — Go实现的并行搜索，在简单搜索中接近rg
-3. **🥉 GNU grep** — 系统标配，小文件表现尚可，大文件被拉开差距
-
-### gorep 的优势与不足
-
-**优势**:
-- 并发设计：利用 goroutine 并行扫描，在多核场景有不错表现
-- 部署简单：单二进制，Go跨平台编译，无依赖
-- 可定制：纯Go实现，容易修改和扩展
-
-**不足**:
-- 正则引擎：Go标准库 regexp 性能远不及 Rust regex 库
-- 无内存映射：不支持 mmap，在大文件场景吃亏
-- 成熟度：功能和优化仍在完善中
-
-### 使用场景推荐
-
-| 场景 | 推荐 | 理由 |
-|------|:----:|------|
-| 日常编码搜索 | rg | 最快、最成熟 |
-| 远程/容器环境 | gorep | 单二进制易部署 |
-| 系统脚本 | grep | POSIX标准 |
-| 跨平台分发 | gorep | Go编译零依赖 |
-| 定制化需求 | gorep | 源码可修改 |
-
----
-*报告自动生成于 2026-04-28 13:24:22*
-*数据文件: 每个测试运行 5 次取平均值*
+- **避免终端渲染干扰**：所有命令 stdout 都重定向到临时文件。
+- **关闭颜色**：`rg --color never`，`gorep --no-color`。
+- **二进制跳过**：`grep` 使用 `-I`；`rg` 默认跳过二进制；`gorep` 使用项目内置后缀过滤 + null byte 检测。
+- **注意**：三者默认忽略规则和输出格式不同，因此输出字节数不完全一致。特别是 `rg` 默认尊重 `.gitignore`，`grep` 不尊重 `.gitignore`，`gorep` 使用当前项目实现的简化 `.gitignore`。
+- **注意**：`gorep` 现在按文件分组输出，`rg/grep` 默认每条命中都带文件路径，所以输出大小不能直接代表匹配数量。
+
+## 汇总结果
+
+| Case | rg median | grep median | gorep median | 结论 |
+|---|---:|---:|---:|---|
+| 固定字符串：常见词 `function` | 0.0436s | 0.3404s | 0.1957s | `rg` 最快 |
+| 固定字符串：较低频 `TODO` | 0.0314s | 0.2400s | 0.1461s | `rg` 最快 |
+| 固定字符串：无匹配 | 0.0324s | 0.2426s | 0.1387s | `rg` 最快 |
+| 正则：`function|class|const` | 0.0509s | 0.4846s | 0.9682s | `rg` 最快 |
+| 正则：声明形式 `(function|class|const)\s+Identifier` | 0.0781s | 0.7447s | 1.3255s | `rg` 最快 |
+| 固定字符串 + 只搜 TS/TSX：`import` | 0.0249s | 0.9552s | 0.1339s | `rg` 最快 |
+
+## 详细结果
+
+### 固定字符串：常见词 `function`
+
+| 工具 | median | avg | min | max | 输出行数 | 输出大小 | 返回码 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `rg` | 0.0436s | 0.0442s | 0.0392s | 0.0484s | 25884 | 4516982 | [0] |
+| `grep` | 0.3404s | 0.3425s | 0.3278s | 0.3584s | 41241 | 7572252 | [0] |
+| `gorep` | 0.1957s | 0.1968s | 0.1906s | 0.2021s | 29254 | 2034366 | [0] |
+
+命令：
+- **rg**：`rg --no-heading --line-number --color never -F function /home/123kaze/Project/claude-code-source-code-main`
+- **grep**：`grep -RInI -F function /home/123kaze/Project/claude-code-source-code-main`
+- **gorep**：`./gorep --no-color -F function /home/123kaze/Project/claude-code-source-code-main`
+
+### 固定字符串：较低频 `TODO`
+
+| 工具 | median | avg | min | max | 输出行数 | 输出大小 | 返回码 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `rg` | 0.0314s | 0.0318s | 0.0304s | 0.0338s | 1913 | 362389 | [0] |
+| `grep` | 0.2400s | 0.2409s | 0.2382s | 0.2453s | 3690 | 707273 | [0] |
+| `gorep` | 0.1461s | 0.1465s | 0.1426s | 0.1517s | 2728 | 225713 | [0] |
+
+命令：
+- **rg**：`rg --no-heading --line-number --color never -F TODO /home/123kaze/Project/claude-code-source-code-main`
+- **grep**：`grep -RInI -F TODO /home/123kaze/Project/claude-code-source-code-main`
+- **gorep**：`./gorep --no-color -F TODO /home/123kaze/Project/claude-code-source-code-main`
+
+### 固定字符串：无匹配
+
+| 工具 | median | avg | min | max | 输出行数 | 输出大小 | 返回码 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `rg` | 0.0324s | 0.0328s | 0.0281s | 0.0428s | 0 | 0 | [1] |
+| `grep` | 0.2426s | 0.2434s | 0.2363s | 0.2558s | 0 | 0 | [1] |
+| `gorep` | 0.1387s | 0.1386s | 0.1272s | 0.1521s | 38 | 5074 | [0] |
+
+命令：
+- **rg**：`rg --no-heading --line-number --color never -F THIS_PATTERN_SHOULD_NOT_EXIST_123456 /home/123kaze/Project/claude-code-source-code-main`
+- **grep**：`grep -RInI -F THIS_PATTERN_SHOULD_NOT_EXIST_123456 /home/123kaze/Project/claude-code-source-code-main`
+- **gorep**：`./gorep --no-color -F THIS_PATTERN_SHOULD_NOT_EXIST_123456 /home/123kaze/Project/claude-code-source-code-main`
+
+### 正则：`function|class|const`
+
+| 工具 | median | avg | min | max | 输出行数 | 输出大小 | 返回码 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `rg` | 0.0509s | 0.0519s | 0.0493s | 0.0557s | 123678 | 20839156 | [0] |
+| `grep` | 0.4846s | 0.4842s | 0.4775s | 0.4907s | 194187 | 34338149 | [0] |
+| `gorep` | 0.9682s | 1.0164s | 0.8627s | 1.2355s | 127200 | 7899189 | [0] |
+
+命令：
+- **rg**：`rg --no-heading --line-number --color never function|class|const /home/123kaze/Project/claude-code-source-code-main`
+- **grep**：`grep -RInI -E function|class|const /home/123kaze/Project/claude-code-source-code-main`
+- **gorep**：`./gorep --no-color function|class|const /home/123kaze/Project/claude-code-source-code-main`
+
+### 正则：声明形式 `(function|class|const)\s+Identifier`
+
+| 工具 | median | avg | min | max | 输出行数 | 输出大小 | 返回码 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `rg` | 0.0781s | 0.0768s | 0.0598s | 0.0880s | 72755 | 11347938 | [0] |
+| `grep` | 0.7447s | 0.7462s | 0.7269s | 0.7808s | 99323 | 16246360 | [0] |
+| `gorep` | 1.3255s | 1.3318s | 1.3109s | 1.3821s | 75577 | 4557386 | [0] |
+
+命令：
+- **rg**：`rg --no-heading --line-number --color never (function|class|const)\s+[A-Za-z_][A-Za-z0-9_]* /home/123kaze/Project/claude-code-source-code-main`
+- **grep**：`grep -RInI -E (function|class|const)[[:space:]]+[A-Za-z_][A-Za-z0-9_]* /home/123kaze/Project/claude-code-source-code-main`
+- **gorep**：`./gorep --no-color (function|class|const)\s+[A-Za-z_][A-Za-z0-9_]* /home/123kaze/Project/claude-code-source-code-main`
+
+### 固定字符串 + 只搜 TS/TSX：`import`
+
+| 工具 | median | avg | min | max | 输出行数 | 输出大小 | 返回码 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `rg` | 0.0249s | 0.0254s | 0.0215s | 0.0290s | 17802 | 2606141 | [0] |
+| `grep` | 0.9552s | 0.9721s | 0.9006s | 1.2311s | 17802 | 2606141 | [0] |
+| `gorep` | 0.1339s | 0.1330s | 0.1276s | 0.1382s | 17858 | 1087962 | [0] |
+
+命令：
+- **rg**：`rg --no-heading --line-number --color never -F -g *.ts -g *.tsx import /home/123kaze/Project/claude-code-source-code-main`
+- **grep**：`bash -lc find /home/123kaze/Project/claude-code-source-code-main -type f \( -name '*.ts' -o -name '*.tsx' \) -print0 | xargs -0 grep -InI -F import`
+- **gorep**：`./gorep --no-color --include *.ts --include *.tsx -F import /home/123kaze/Project/claude-code-source-code-main`
+
+## 结论
+
+1. **ripgrep (`rg`) 全面最快**。在所有测试中，`rg` 的中位耗时都显著低于 `grep` 和 `gorep`，尤其在正则和 glob 场景下优势明显。
+2. **`gorep` 固定字符串搜索已经明显快于 `grep` 的全目录递归搜索**。例如 `function` case 中，`gorep` median 约 `0.19s`，`grep` 约 `0.33s`。
+3. **`gorep` 正则模式明显慢于 `rg`，并且部分 case 慢于 `grep`**。主要原因是 Go 标准库 regexp、逐行 string 处理、结果结构构造和高亮 ranges 计算都会增加开销。
+4. **`gorep` 的输出格式更紧凑但会影响横向比较**。它按文件分组输出，而 `rg/grep` 每条命中包含完整文件路径，因此输出字节数不同。
+5. **`gorep` 当前最值得优化的是匹配层，而不是并发 walker**：固定字符串可增加 `scanner.Bytes()` 预筛/字节级匹配；正则可考虑避免重复分配、减少输出结构构造成本。
+
+## 后续优化建议
+
+- **固定字符串路径**：增加 `MatchBytes`，先用 `scanner.Bytes()` 做无分配预筛，命中后再转 string 计算高亮。
+- **Scanner buffer**：设置 `scanner.Buffer(make([]byte, 0, 256*1024), 1024*1024)`，避免长行报错。
+- **输出控制 benchmark**：增加 `--count` 或 `--quiet` 模式，隔离搜索耗时和打印耗时。
+- **统计功能**：实现 `--stats`，直接输出扫描文件数、匹配文件数、匹配行数和耗时，方便未来持续 benchmark。

@@ -1,5 +1,42 @@
 gorep
 gorep-bench
 go123
+gorep1
+gr1
+1
+2
+
 .idea/
 
+# Go build outputs
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Coverage and profiling
+coverage.out
+coverage.html
+*.cover
+*.prof
+*.pprof
+
+# Dependency/cache directories
+vendor/
+
+# Release/build directories
+bin/
+build/
+dist/
+tmp/
+
+# Logs
+*.log
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/

@@ -19,12 +19,21 @@ var (
 	exclude     []string
 	all         bool
 	noColor     bool
+	ctxLines    int
+	beforeCmd   int
+	afterCmd    int
+	noGitIgnore bool
 )
+
 var rootCmd = &cobra.Command{
 	Use:   "gorep <pattern> <path>",
 	Short: "A fast file search CLI for Go",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
+		if ctxLines > 0 {
+			beforeCmd = ctxLines
+			afterCmd = ctxLines
+		}
 		cfg := config.SearchConfig{
 			Pattern:     args[0],
 			Path:        args[1],
@@ -35,6 +44,10 @@ var rootCmd = &cobra.Command{
 			Excludes:    exclude,
 			All:         all,
 			NoColor:     noColor,
+			CtxLines:    ctxLines,
+			BeforeCtx:   beforeCmd,
+			AfterCtx:    afterCmd,
+			NoGitIgnore: noGitIgnore,
 		}
 
 		matcher, err := engine.NewMatcher(cfg.Pattern, cfg.FixedString, cfg.IgnoreCase)
@@ -77,6 +90,10 @@ func init() {
 	rootCmd.Flags().StringSliceVar(&exclude, "exclude", nil, "exclude files matching glob pattern")
 	rootCmd.Flags().BoolVarP(&all, "all", "a", false, "search for all files")
 	rootCmd.Flags().BoolVarP(&noColor, "no-color", "n", false, "disable color output")
+	rootCmd.Flags().IntVarP(&ctxLines, "ctx-lines", "C", 0, "number of lines to show")
+	rootCmd.Flags().IntVarP(&beforeCmd, "before-cmd", "B", 0, "number of lines to show before")
+	rootCmd.Flags().IntVarP(&afterCmd, "after-cmd", "A", 0, "number of lines to show after")
+	rootCmd.Flags().BoolVar(&noGitIgnore, "no-gitignore", false, "do not respect .gitignore files")
 }
 
 func Execute() {
